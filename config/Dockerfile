@@ -1,6 +1,7 @@
+# Use the official Ubuntu base image
 FROM ubuntu:20.04
 
-# Install necessary packages
+# Install necessary dependencies
 RUN apt-get update && \
     apt-get install -y curl sudo apt-transport-https && \
     curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash - && \
@@ -8,20 +9,31 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Create a user to run the agent
-RUN useradd -m shalevv && \
-    mkdir /azp && \
-    chown -R shalevv:shalevv /azp
-
-# Install Azure Pipelines Agent
+# Create the /azp directory and set it as the working directory
+RUN mkdir /azp
 WORKDIR /azp
+
+# Download and extract the Azure Pipelines agent package
 RUN curl -LsS https://vstsagentpackage.azureedge.net/agent/2.193.1/vsts-agent-linux-x64-2.193.1.tar.gz | tar -xz
 
-# Install dependencies
+# Install additional dependencies required by the agent
 RUN ./bin/installdependencies.sh
 
-# Switch to non-root user
-USER shalevv
+# Create a non-root user and grant permissions
+RUN useradd -m azureagent && \
+    chown -R azureagent:azureagent /azp && \
+    chmod -R u+rw /azp
 
-# Set entrypoint for agent
-CMD ["./bin/Agent.Listener", "run"]
+# Switch to the non-root user
+USER azureagent
+
+# Default command to configure and run the agent
+CMD ["bash", "-c", "./config.sh --unattended \
+    --agent ${AZP_AGENT_NAME} \
+    --url ${AZP_URL} \
+    --auth PAT \
+    --token ${AZP_TOKEN} \
+    --pool ${AZP_POOL} \
+    --replace \
+    --acceptTeeEula && ./bin/Agent.Listener run"]
+
