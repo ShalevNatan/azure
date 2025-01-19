@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: azure-devops-agent
+  namespace: ns-azure-agents
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: azure-devops-agent
+  template:
+    metadata:
+      labels:
+        app: azure-devops-agent
+    spec:
+      serviceAccountName: azure-devops-agent-sa
+      containers:
+      - name: azure-devops-agent
+        image: mcr.microsoft.com/azure-pipelines/vsts-agent:ubuntu-22.04
+        env:
+        - name: AZP_URL
+          valueFrom:
+            configMapKeyRef:
+              name: azure-devops-agent-config
+              key: AZURE_DEVOPS_URL
+        - name: AZP_POOL
+          valueFrom:
+            configMapKeyRef:
+              name: azure-devops-agent-config
+              key: AZURE_DEVOPS_POOL
+        - name: AZP_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: azure-devops-agent-secret
+              key: PAT
+        volumeMounts:
+        - name: workspace
+          mountPath: /workspace
+      volumes:
+      - name: workspace
+        emptyDir: {}
