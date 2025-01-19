@@ -4,7 +4,7 @@ metadata:
   name: azure-devops-agent
   namespace: ns-azure-agents
 spec:
-  replicas: 1
+  replicas: 10
   selector:
     matchLabels:
       app: azure-devops-agent
@@ -16,7 +16,7 @@ spec:
       serviceAccountName: azure-devops-agent-sa
       containers:
       - name: azure-devops-agent
-        image: ‎shalevnatan6/azure:1‎
+        image: shalevnatan6/azure:1
         env:
         - name: AZP_URL
           valueFrom:
@@ -33,9 +33,17 @@ spec:
             secretKeyRef:
               name: azure-devops-agent-secret
               key: PAT
+        - name: AZP_AGENT_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         volumeMounts:
         - name: workspace
           mountPath: /workspace
+        lifecycle:
+          preStop:
+            exec:
+              command: ["bash", "-c", "./config.sh remove --auth PAT --token $AZP_TOKEN"]
       volumes:
       - name: workspace
         emptyDir: {}
