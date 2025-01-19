@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: azure-devops-agent-config
+  namespace: ns-azure-agents
+data:
+  AZURE_DEVOPS_URL: "https://dev.azure.com/<your-organization>"
+  AZURE_DEVOPS_POOL: "<agent-pool-name>"
